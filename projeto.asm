@@ -7,9 +7,22 @@ linha: .asciiz "\n"
 
 input_buffer: .space 100
 apartamentos: .space 4320 #12 andares * 2ap/a * 6 moradores * tamanho string | 180 para cada ap | 30 para cada morador
-veiculos: .space  720 #24 ap * 30 string | 1 para tipo de veiculo | 7 para placa | 22 para modelo
+veiculos: .space  1440 #24 ap * 30 string * 2 veiculos| 1 para tipo de veiculo | 7 para placa | 22 para modelo
+
+
 cmd1: .asciiz "addMorador"
-    
+cmd2: .asciiz "rmvMorador"
+cmd3: .asciiz "addAuto"
+cmd4: .asciiz "rmvAuto"
+cmd5: .asciiz "limparAp"
+cmd6: .asciiz "infoAp"
+cmd7: .asciiz "infoGeral"
+cmd8: .asciiz "salvar"
+cmd9: .asciiz "recarregar"
+cmd10: .asciiz "formatar"
+
+
+
 .macro print_shell
     li $v0, 4
     la $a0, shell
@@ -55,7 +68,7 @@ terminal_loop:
     jal execute_command  # Chama a função para executar o comando
     
     # Volta ao início do loop
-    j terminal_loop
+    j main
     
 # Função para ler uma linha do terminal
 # A string lida é armazenada em $a0 e termina com '\n'
@@ -93,14 +106,85 @@ execute_command:
     # Compara o comando com 'addMorador'
     comparar_comando cmd1, input_buffer
     beq $v0, 0, handle_addMorador
+    # compara com rmvMorador
+    #comparar_comando cmd2, input_buffer
+    #beq $v0, 0, handle_rmvMorador
+    # comparar limparAp
+    #comparar_comando cmd5, input_buffer
+    #beq $v0, 0, handle_limparAp
     
     # Se não for 'addMorador', podemos adicionar mais checagens para outros comandos aqui
     
     j terminal_loop  # Retorna da função
     
+    
+    
+    
+    
+    
+    
+    
 handle_addMorador:
     print_string(boas_vindas)
+    la $a0, input_buffer
+    jal extract_options
+    
     j terminal_loop  # Retorna da função
+ 
+    
+    
+    
+    
+    
+    
+extract_options:
+    # $a0 contém a string digitada (após a validação do comando)
+    # $a1 aponta para o início das opções
+    li $t0, 32          # ASCII para ' '
+    li $t1, 0x2D2D      # '--' em ASCII
+
+find_space:
+    lb $t2, 0($a0)      # Carrega o próximo caractere
+    beq $t2, $t0, found_space  # Se for um espaço, encontrou o início das opções
+    beq $t2, 0, end_extract    # Se for o fim da string, encerra a extração
+    addi $a0, $a0, 1    # Avança para o próximo caractere
+    j find_space
+
+found_space:
+    addi $a0, $a0, 1    # Pula o espaço
+    lb $t3, 0($a0)      # Carrega o próximo byte
+    lb $t4, 1($a0)      # Carrega o byte seguinte
+    sll $t3, $t3, 8     # Shift para combinar '--'
+    or $t3, $t3, $t4
+
+    bne $t3, $t1, end_extract # Se não for '--', encerra (opção inválida)
+    addi $a0, $a0, 2    # Pula o '--'
+    move $a1, $a0       # Salva o início da opção
+    j extract_next_option
+
+extract_next_option:
+    lb $t2, 0($a0)      # Carrega o próximo caractere
+    beq $t2, $t0, save_option  # Se for um espaço, salva a opção
+    beq $t2, 0, save_option    # Se for o fim da string, salva a última opção
+    addi $a0, $a0, 1    # Avança para o próximo caractere
+    j extract_next_option
+
+save_option:
+    print_string(boas_vindas)
+    jr $ra
+
+end_extract:
+print_string(boas_vindas)
+    jr $ra              # Retorna para a função chamadora
+
+    
+    
+    
+    
+    
+    
+    
+    
     
 string_compare_command:
     # Loop para comparar caractere por caractere
