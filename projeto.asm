@@ -96,11 +96,11 @@ execute_command:
     
     # Se não for 'addMorador', podemos adicionar mais checagens para outros comandos aqui
     
-    jr $ra  # Retorna da função
+    j terminal_loop  # Retorna da função
     
 handle_addMorador:
     print_string(boas_vindas)
-    jr $ra  # Retorna da função
+    j terminal_loop  # Retorna da função
     
 string_compare_command:
     # Loop para comparar caractere por caractere
