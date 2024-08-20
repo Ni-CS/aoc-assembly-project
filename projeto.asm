@@ -1,11 +1,11 @@
 .data
 
-shell: .asciiz "MAN-SHELL>>"
+shell: .asciiz "\nMAN-SHELL>>"
 boas_vindas: .asciiz "Seja Bem Vindo ao MAN, o seu sistema gerenciador de condomínio!"
 comandos: .asciiz "\nComandos do Sistema exemplo(comando --<option1> --<option2>):\naddMorador --<ap> --<nome> \nrmvMorador --<ap> --<nome>\nAddAuto --<ap> --<tipo> --<modelo> --<placa>\nrmvAuto --<ap> --<placa>\nlimparAp <ap>\ninfoAp --<ap>\ninfoGeral\nsalvar\nrecarregar\nformatar"
 linha: .asciiz "\n"
-input_buffer: .space 100  # Buffer de 100 bytes para armazenar a entrada
 
+input_buffer: .space 100
 apartamentos: .space 4320 #12 andares * 2ap/a * 6 moradores * tamanho string | 180 para cada ap | 30 para cada morador
 veiculos: .space  720 #24 ap * 30 string | 1 para tipo de veiculo | 7 para placa | 22 para modelo
 cmd1: .asciiz "addMorador"
@@ -38,9 +38,9 @@ cmd1: .asciiz "addMorador"
 .text
 .globl main
 
-
-
 main:
+    print_string(boas_vindas)
+    print_string(comandos)
     # Loop principal do terminal
 terminal_loop:
     print_shell
@@ -90,18 +90,18 @@ read_line_done:
 
 # Função para interpretar e executar o comando
 execute_command:
+    # Compara o comando com 'addMorador'
     comparar_comando cmd1, input_buffer
-    #beq $v0, 0, handle_addMorador
+    beq $v0, 0, handle_addMorador
     
+    # Se não for 'addMorador', podemos adicionar mais checagens para outros comandos aqui
     
     jr $ra  # Retorna da função
     
 handle_addMorador:
-	
-   print_string(boas_vindas)
-   
-   
-   
+    print_string(boas_vindas)
+    jr $ra  # Retorna da função
+    
 string_compare_command:
     # Loop para comparar caractere por caractere
 string_compare_command_loop:
