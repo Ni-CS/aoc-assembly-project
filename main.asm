@@ -73,8 +73,8 @@ loop_shell:
 	beq $t0, $zero, handlerAddMorador #se for igual a addMorador, vai processar isso
 	
 	
-	print_string(inv_command)
-	j loop_shell
+	print_string(inv_command) #vai printar que foi comando invalido
+	j loop_shell #volta pro loop de comando
 	
 	
 handlerAddMorador:
@@ -105,11 +105,12 @@ handlerAddMorador:
 		la $a0, apartamentos($t2) # carrega o endereco do destino a salvar o nome digitado
 		jal strcpy #salva o nome copiando da origem pro destino
 	
-	j loop_shell
+	j loop_shell #volta pro loop de comando
 
+#comando invalido
 invalida:
-	print_string(inv_ap)
-	j loop_shell
+	print_string(inv_ap) #printa quando o comando e invalido
+	j loop_shell #volta pro loop de comando
 
 
 strncmp:
