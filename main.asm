@@ -12,11 +12,20 @@ sair: .asciiz "Saindo..."
 ap_lotado: .asciiz "\nImpossível adicionar morador, apartamento lotado!\n"
 morador_inexistente: .asciiz "Morador não encontrado\n"
 morador_retirado: .asciiz "Morador Removido\n"
+pedir_tipo_veiculo: .asciiz "\nDigite o tipo do veículo(M) ou (C): " 
+pedir_placa: .asciiz "\nDigite a placa do veículo: "
+pedir_modelo: .asciiz "\nDigite o modelo do veículo: "
+vaga_lotada: .asciiz "\nA vaga está ocupada\n"
+tipo_invalido: .asciiz "\nTipo de veículo inserido é inválido\n"
 
 input_buffer: .space 100 #string digitada
 apartamentos: .space 4320 #12 andares * 2ap/a * 6 moradores * tamanho string | 180 para cada ap | 30 para cada morador
 veiculos: .space  1440 #24 ap * 30 string * 2 veiculos| 1 para tipo de veiculo | 7 para placa | 22 para modelo
 input_nome:   .space 30       # Buffer para a string de saída (primeira palavra)
+input_tipo: .space 1
+input_placa: .space 7
+input_modelo: .space 22
+
 
 #comandos disponiveis
 cmd1: .asciiz "addMorador"
@@ -83,7 +92,22 @@ loop_shell:
     	move $t0, $v0 # resposta, 0 são iguais
 	beq $t0, $zero, handlerRmvMorador #se for igual a addMorador, vai processar isso
 #=======================================
-	
+	la $a0, cmd3 #compara com rmvMorador
+    	la $a1, input_buffer #passa oq foi digitado
+    	li $a2, 7 #limite de caracteres
+    	jal strncmp #compara
+    	
+    	move $t0, $v0 # resposta, 0 são iguais
+	beq $t0, $zero, handlerAddAuto #se for igual a addMorador, vai processar isso
+#=======================================	
+	la $a0, cmd4 #compara com rmvMorador
+    	la $a1, input_buffer #passa oq foi digitado
+    	li $a2, 7 #limite de caracteres
+    	jal strncmp #compara
+    	
+    	move $t0, $v0 # resposta, 0 são iguais
+	beq $t0, $zero, handlerRmvAuto #se for igual a addMorador, vai processar isso
+#=======================================
 	print_string(inv_command) #vai printar que foi comando invalido
 	j loop_shell #volta pro loop de comando
 	
@@ -192,11 +216,97 @@ handlerRmvMorador:
 						print_string(morador_retirado) # informa que o morador foi retirado
 						j loop_shell # volta para o loop de comando
 		
+handlerAddAuto:
+	li $t9, 23 # coloca em t9 23 que é o numero máximo de aps
+
+	print_string(pedir_ap) # printa a frase de pedir um ap
+	read_int($t0) # recebe o ap e salva em t0
+	
+	print_string(pedir_tipo_veiculo) # pedir o tipo do veiculo
+	#receber o tipo em char
+	li $v0, 12 # codigo para ler um char(tipo)
+	li $a2, 1 # limite de caracteres a ler
+	syscall # recebe
+	sb $v0, input_tipo # salvou o valor no espaco alocado
+	
+	blt $t0, $zero, invalida # verifica se é valido o numero do ap
+	bgt $t0, $t9, invalida # verifica se é válido o numero do ap
+	
+	li $t1, 60 # carrega a quantia de espaco para cada apartamento(30 cada veiculo)
+	mul $t0, $t0, $t1 # calcula a posicao inicial dos veiculos desse ap
+	li $t5, 0
+	verificar_endereco_auto:
+		lb $t4, input_tipo # carrega o que o tipo de veiculo que o usuario digitou
 		
+		#verifica se é válido
+		li $t3, 'M' # carrega a inicial de moto
+		bne $t4, $t3, verifica_validade_carro#sai daqui
 		
+		j verifica_vaga
 		
+		verifica_validade_carro:
+			#verifica se é válido
+			li $t3, 'C' # carrega a inicial de carro
+			bne $t4, $t3, input_invalido # sai daqui
+			
+		verifica_vaga:	
+			#verifica se vaga atual esta livre
+			lb $t2, veiculos($t0) # pega o valor que está na posicao inicial dos veiculos desse ap e salva em t2
+			beq $t2, $zero, inserir_auto # verifica se está livre, 0 = livre, M = moto, C = carro
 		
+			#não estando livre, verifica se o cadastrado na vaga atual é um carro
+			li $t3, 'C' # carrega a inicial de carro
+			beq $t2, $t3, vaga_ocupada # compara a posicao inicial, quando nao está livre, se tem um carro, se tiver avisa que está ocupado
 		
+			#não sendo um carro, verifica se o tipo digitado pelo usuário é um carro
+			li $t3, 'C' # carrega a inicial de carro
+			beq $t4, $t3, vaga_ocupada # se ele quer cadastrar um carro(aqui já tem uma moto obrigatoriamente), vai falhar
+		
+			addi $t0, $t0, 30 # foi para o proxima vaga
+			bge $t5, 2, vaga_ocupada # se passar de 2 vagas ele diz que está ocupado
+			j verifica_vaga
+		
+		inserir_auto:
+			print_string(pedir_placa) # pede a placa
+			read_string(input_placa, 7) # le a placa
+			
+			print_string(pedir_modelo) # pede o modelo
+			read_string(input_modelo, 22) # le o modelo
+			
+			inserir_tipo_auto:
+				la $a1, input_tipo # carrega o endereco do tipo
+				la $a0, veiculos($t0) # carrega o endereco de onde salvar o tipo na posicao correta
+				jal strcpy # salva o tipo
+			
+			inserir_placa_auto:
+				la $a1, input_placa # carrega o endereco da placa
+				addi $t0, $t0, 1 # adiciona 1 posicao no endereco dessa vaga desse ap 1(tipo)|7(placa)|22(modelo) 
+				la $a0, veiculos($t0) # carrega o endereco de onde salvar a placa na posicao correta
+				jal strcpy # salva a placa
+				
+			inserir_modelo_veiculo:
+				la $a1, input_modelo # carrega o endereco do modelo
+				addi $t0, $t0, 7 # adiciona 7 para chegar na parte do modelo dessa vaga desse ap
+				la $a0, veiculos($t0) # acrrega o endereco de onde salvar na posicao correta
+				jal strcpy # salva o modelo
+				
+			j loop_shell		
+		
+		vaga_ocupada:
+			print_string(vaga_lotada) # printa que a vaga esta ocupada
+			j loop_shell # volta para loop comando
+			
+		input_invalido:
+			print_string(tipo_invalido) # printa que o tipo digitado esta errado
+			j loop_shell # volta para o loop comando
+			
+handlerRmvAuto:
+	print_string(pedir_ap) # printa a frase de pedir um ap
+	read_int($t0) # recebe o ap e salva em t0
+
+
+
+
 #comando invalido
 invalida:
 	print_string(inv_ap) #printa quando o comando e invalido
