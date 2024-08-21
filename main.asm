@@ -160,8 +160,8 @@ handlerRmvMorador:
 				li $t4, 30 #tamanho de um morador do ap
 				verificar_igualdade:
 					
-					la $t7, apartamentos
-					add $t7, $t7, $t0
+					la $t7, apartamentos # carrega o endereco base do array de apartamentos
+					add $t7, $t7, $t0 # soma com o endereco do apartamento
 					
 					la $a1, input_nome #move o nome salvo para passar para a comparação
 					move $a0, $t7 # move o nome digitado para passar para a comparação
@@ -173,7 +173,7 @@ handlerRmvMorador:
 					add $t0, $t4, $t0 # vai para o endereco do proximo morador
 					bne $t3, 6, verificar_igualdade # repete o ciclo
 					
-					print_string(morador_inexistente)
+					print_string(morador_inexistente) # printa quando nao tem um morador com o nome digitado nesse apartamento
 					
 					j loop_shell # volta pro loop de comando
 					
@@ -182,15 +182,15 @@ handlerRmvMorador:
 					li $t4, 30 # $t4 = número de bytes a serem limpos
     					li $t5, 0 # $t5 = valor a ser armazenado (0)
     					loop_remover_morador:
-    						beq $t4, $zero, morador_removido
-    						sb $t5, apartamentos($t0)  
-    						addi $t0, $t0, 1 
-    						subi $t4, $t4, 1  
-    						j loop_remover_morador
+    						beq $t4, $zero, morador_removido # terminou de iterar pelo nome e zerou ele todo
+    						sb $t5, apartamentos($t0) # guarda 0 no caractere atual
+    						addi $t0, $t0, 1 # passa para o proximo caractere
+    						subi $t4, $t4, 1 # diminui do contador de caracteres a remover
+    						j loop_remover_morador # continua no ciclo
     						
 					morador_removido:
-						print_string(morador_retirado)
-						j loop_shell
+						print_string(morador_retirado) # informa que o morador foi retirado
+						j loop_shell # volta para o loop de comando
 		
 		
 		
