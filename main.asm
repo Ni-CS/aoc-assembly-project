@@ -13,7 +13,7 @@ sair: .asciiz "Saindo..."
 input_buffer: .space 100 #string digitada
 apartamentos: .space 4320 #12 andares * 2ap/a * 6 moradores * tamanho string | 180 para cada ap | 30 para cada morador
 veiculos: .space  1440 #24 ap * 30 string * 2 veiculos| 1 para tipo de veiculo | 7 para placa | 22 para modelo
-input_nome:   .space 100       # Buffer para a string de saída (primeira palavra)
+input_nome:   .space 30       # Buffer para a string de saída (primeira palavra)
 
 #comandos disponiveis
 cmd1: .asciiz "addMorador"
@@ -49,6 +49,7 @@ cmd11: .asciiz "sair"
 
 .macro print_int %register
     li $v0, 1
+    move $a0, %register
     syscall
 .end_macro
 
@@ -62,35 +63,47 @@ loop_shell:
 	print_string(shell)#printar o shell
 	read_string(input_buffer, 100)#pega a string do usuário
 
-	la $a0, cmd1
-    	la $a1, input_buffer
-    	li $a2, 10
-    	jal strncmp
+	#comparar com os comandos existentes
+	la $a0, cmd1 #compara com addMorador
+    	la $a1, input_buffer #passa oq foi digitado
+    	li $a2, 10 #limite de caracteres
+    	jal strncmp #compara
     
-    	move $t0, $v0
-    
-	beq $t0, $zero, handlerAddMorador
+    	move $t0, $v0 # resposta, 0 são iguais
+	beq $t0, $zero, handlerAddMorador #se for igual a addMorador, vai processar isso
+	
 	
 	print_string(inv_command)
 	j loop_shell
 	
 	
 handlerAddMorador:
-	li $t9, 23 # coloca em t9 23
+	li $t9, 23 # coloca em t9 23 que é o numero máximo de aos
 	
-	li $v0, 4
-    	la $a0, pedir_ap
-    	syscall
+	li $v0, 4 #carrega o codigo de printar uma string
+    	la $a0, pedir_ap # carrega a frase
+    	syscall # pede o apartamento
     	
-	li $v0, 5 # Lê apartamento
-	syscall
-	move $t0, $v0
+	li $v0, 5 # codigo de ler int
+	syscall # le o ap
+	move $t0, $v0 #salva o ap em t0
 	
 	print_string(pedir_nome) # Pede nome do morador
-	read_string(input_nome, 100) # lê nome do morador
+	read_string(input_nome, 30) # lê nome do morador
 	
-	blt $t0, $zero, invalida
-	bgt $t0, $t9, invalida
+	la $t1, input_nome #carrega o endereco de onde salvou o nome digitado
+	
+	blt $t0, $zero, invalida # verifica se é valido o numero do ap
+	bgt $t0, $t9, invalida # verifica se é válido o numero do ap
+	
+	adicionar_morador:
+		#calcular o endereço a salvar
+		li $t2, 180 # carrega 180, quantia por ap
+		mul $t0, $t0, $t2 #multiplica pelo ap em si, ex: ap 12 * 180 = x
+		
+		move $a1, $t1 # move o endereco da origem do nome digitado
+		la $a0, apartamentos($t2) # carrega o endereco do destino a salvar o nome digitado
+		jal strcpy #salva o nome copiando da origem pro destino
 	
 	j loop_shell
 
@@ -120,3 +133,17 @@ strncmp_next:
 strncmp_exit:
     move $v0, $zero #salva o retorno
     jr $ra #volta para onde foi chamado
+
+strcpy: #funcao de copia de strings
+	move $v0, $a0 #ja salva o endereco do destino para retornar em v0
+	
+strcpy_iteration: #loop para copiar cada caractere da string
+	lb $t0, 0($a1) #carrega o caractere da string que esta na origem
+	sb $t0, 0($a0) #salva o mesmo caractere na string de destino
+	beq $t0, $zero, strcpy_exit #se esse caractere copiado foi o null(que deve ser copiado tbm), ele encerra a funcao e vai para a saida
+	addi $a0, $a0, 1 #aumenta o endereco para o proximo caractere no destino
+	addi $a1, $a1, 1 #aumenta o endereco para o proximo caractre na origem
+	j strcpy_iteration #volta para a label e repete o loop
+	
+strcpy_exit:
+	jr $ra #volta para onde foi chamado
