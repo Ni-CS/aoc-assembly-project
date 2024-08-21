@@ -29,9 +29,10 @@ cmd10: .asciiz "formatar"
     syscall
 .end_macro
 
-.macro read_string %register
+.macro read_string %register, %stringLimit
     li $v0, 8
-    move $a0, %register
+    la $a0, %register
+    li $a1, %stringLimit
     syscall
 .end_macro
 
@@ -56,7 +57,7 @@ print_string(boas_vindas)
 #loop de printar o shell
 loop_shell:
 	print_string(shell)#printar o shell
-	read_string(input_buffer)
+	read_string(input_buffer, 100)
 	
 
 	
