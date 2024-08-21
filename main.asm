@@ -103,18 +103,18 @@ handlerAddMorador:
 		mul $t0, $t0, $t2 #multiplica pelo ap em si, ex: ap 12 * 180 = x
 		
 		configurar_disponibilidade:
-			li $t3, 0
-			li $t4, 30
+			li $t3, 0 #contador de moradores
+			li $t4, 30 #tamanho de um morador do ap
 			verificar_disponibilidade:
-				lb $t5, apartamentos($t2)
-				beqz $t5, adicionar_morador
-				addi $t3, $t3, 1
-				add $t2, $t4, $t2
-				bne $t3, 6, verificar_disponibilidade
+				lb $t5, apartamentos($t2) #carrega o primeiro valor do ap
+				beqz $t5, adicionar_morador #se for zero, ja adiciona
+				addi $t3, $t3, 1 # do contrario aumenta o contador de morador
+				add $t2, $t4, $t2 # vai pro endereco do proximo morador
+				bne $t3, 6, verificar_disponibilidade # fica no loop ate achar uma vago
 				
-				print_string(ap_lotado)
+				print_string(ap_lotado) #se nao achar avisa que esta lotado
 				
-				j loop_shell
+				j loop_shell # volta pro loop de comando
 		adicionar_morador:
 			move $a1, $t1 # move o endereco da origem do nome digitado
 			la $a0, apartamentos($t2) # carrega o endereco do destino a salvar o nome digitado
