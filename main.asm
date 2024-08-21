@@ -9,6 +9,7 @@ pedir_nome: .asciiz "\nDigite o nome do morador: "
 inv_command: .asciiz "COMANDO INVÁLIDO\n"
 inv_ap: .asciiz "APARTAMENTO INVÁLIDO\n"
 sair: .asciiz "Saindo..."
+ap_lotado: .asciiz "\nImpossível adicionar morador, apartamento lotado!\n"
 
 input_buffer: .space 100 #string digitada
 apartamentos: .space 4320 #12 andares * 2ap/a * 6 moradores * tamanho string | 180 para cada ap | 30 para cada morador
@@ -96,14 +97,28 @@ handlerAddMorador:
 	blt $t0, $zero, invalida # verifica se é valido o numero do ap
 	bgt $t0, $t9, invalida # verifica se é válido o numero do ap
 	
-	adicionar_morador:
+	configurar_morador:
 		#calcular o endereço a salvar
 		li $t2, 180 # carrega 180, quantia por ap
 		mul $t0, $t0, $t2 #multiplica pelo ap em si, ex: ap 12 * 180 = x
 		
-		move $a1, $t1 # move o endereco da origem do nome digitado
-		la $a0, apartamentos($t2) # carrega o endereco do destino a salvar o nome digitado
-		jal strcpy #salva o nome copiando da origem pro destino
+		configurar_disponibilidade:
+			li $t3, 0
+			li $t4, 30
+			verificar_disponibilidade:
+				lb $t5, apartamentos($t2)
+				beqz $t5, adicionar_morador
+				addi $t3, $t3, 1
+				add $t2, $t4, $t2
+				bne $t3, 6, verificar_disponibilidade
+				
+				print_string(ap_lotado)
+				
+				j loop_shell
+		adicionar_morador:
+			move $a1, $t1 # move o endereco da origem do nome digitado
+			la $a0, apartamentos($t2) # carrega o endereco do destino a salvar o nome digitado
+			jal strcpy #salva o nome copiando da origem pro destino
 	
 	j loop_shell #volta pro loop de comando
 
