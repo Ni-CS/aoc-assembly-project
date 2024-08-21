@@ -60,26 +60,22 @@ cmd11: .asciiz "sair"
 #loop de printar o shell
 loop_shell:
 	print_string(shell)#printar o shell
-	read_string(input_buffer, 11)#pega a string do usuário
+	read_string(input_buffer, 100)#pega a string do usuário
 
 	la $a0, cmd1
     	la $a1, input_buffer
-    	jal strcmp
+    	li $a2, 10
+    	jal strncmp
     
     	move $t0, $v0
     
 	beq $t0, $zero, handlerAddMorador
-	
-	print_int($t0)
 	
 	print_string(inv_command)
 	j loop_shell
 	
 	
 handlerAddMorador:
-
-	print_string(comandos)
-
 	li $t9, 23 # coloca em t9 23
 	
 	li $v0, 4
@@ -96,7 +92,6 @@ handlerAddMorador:
 	blt $t0, $zero, invalida
 	bgt $t0, $t9, invalida
 	
-	print_string(comandos)
 	j loop_shell
 
 invalida:
@@ -104,19 +99,24 @@ invalida:
 	j loop_shell
 
 
-strcmp: #comparar strings
-	lb $t0, 0($a0) #carrega o valor da string 1
-	lb $t1, 0($a1) #carrega o valor da string 2
-	beq $t0, $t1, strcmp_iteration #se forem iguais parte pro proximo endereco so verificando se chegou no 0 antes de incrementar 
-	sub $v0, $t0, $t1 #se chegar aqui eh pq sao diferentes, entao ao subtrair, se str1>str2 = retorno positivo, se str1<str2 = retorno negativo
-	jr $ra #volta para onde foi chamado
-	
-strcmp_iteration:
-	beq $t0, $zero, strcmp_exit #se for igual a zero quer dizer que acabou, entao vai para a saida
-	addi $a0, $a0, 1 #adiciona 1 para ir pro proximo caractere
-	addi $a1, $a1, 1 #adiciona 1 para ir pro proximo caractere 
-	j strcmp #volta para a funcao e continua a comparar
-	
-strcmp_exit:
-	move $v0, $zero #salva o valor em v0 para retornar
-	jr $ra #volta para onde foi chamado
+strncmp:
+    move $t2, $a2 #salva o numero maximo de comparacoes
+
+strncmp_iteration: #funcao de comparar, mas com uma num maximo de vezes
+    beqz $t2, strncmp_exit #vai para a saida quando acabar o numero de comparacoes
+    lb $t0, 0($a0) #carrega o primeiro caractere
+    lb $t1, 0($a1) #carrega o segundo caractere
+    beq $t0, $t1, strncmp_next #se forem iguais vai pro proximo caractere
+    sub $v0, $t0, $t1 #se chegar aqui eh pq sao diferentes, entao ao subtrair, se str1>str2 = retorno positivo, se str1<str2 = retorno negativo
+    jr $ra #retorna pra onde foi chamado
+
+strncmp_next:
+    beq $t0, $zero, strncmp_exit #se for 0 ele já sai
+    addi $a0, $a0, 1 #vai pro proximo caractere
+    addi $a1, $a1, 1 #vai pro proximo caractere
+    addi $t2, $t2, -1 #diminui a quantia de comparacoes
+    j strncmp_iteration #volta pra funcao e continua a comparar
+
+strncmp_exit:
+    move $v0, $zero #salva o retorno
+    jr $ra #volta para onde foi chamado
