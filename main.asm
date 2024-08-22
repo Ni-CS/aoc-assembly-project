@@ -2,7 +2,7 @@
 
 shell: .asciiz "MAN-SHELL>>"
 boas_vindas: .asciiz "Seja Bem Vindo ao MAN, o seu sistema gerenciador de condominio!\n"
-comandos: .asciiz "\nComandos do Sistema exemplo(comando --<option1> --<option2>):\naddMorador --<ap> --<nome> \nrmvMorador --<ap> --<nome>\nAddAuto --<ap> --<tipo> --<modelo> --<placa>\nrmvAuto --<ap> --<placa>\nlimparAp <ap>\ninfoAp --<ap>\ninfoGeral\nsalvar\nrecarregar\nformatar\n"
+comandos: .asciiz "\nComandos do Sistema:\naddMorador - rmvMorador - addAuto - rmvAuto - limparAp - infoGeral - salvar - recarregar - formatar\n"
 linha: .asciiz "\n"
 pedir_ap: .asciiz "\nDigite o numero do apartamento(0...23): "
 pedir_nome: .asciiz "\nDigite o nome do morador: "
@@ -30,8 +30,9 @@ arquivo_salvo: .asciiz "\nArquivo salvo\n"
 caminho_aps: .asciiz "C:\\Users\\nichc\\OneDrive\\Documentos\\AOC\\Projeto\\aoc-assembly-project\\apartamentos.txt"
 caminho_veiculos: .asciiz "C:\\Users\\nichc\\OneDrive\\Documentos\\AOC\\Projeto\\aoc-assembly-project\\veiculos.txt"
 arquivo_recarregado: .asciiz "\nDados recarregados\n"
-
-
+ap_formatados: .asciiz "\nApartamentos Formatados\n"
+veiculo_formatados: .asciiz "\nVeiculos Formatados\n"
+formatado: .asciiz "\nTudo Formatado!\n"
 
 input_buffer: .space 100 #string digitada
 apartamentos: .space 4320 #12 andares * 2ap/a * 6 moradores * tamanho string | 180 para cada ap | 30 para cada morador
@@ -83,7 +84,8 @@ cmd11: .asciiz "sair"
 .text
 
 #printamos o inicio do app
-#print_string(boas_vindas)
+print_string(boas_vindas)
+print_string(comandos)
 
 #loop de printar o shell
 loop_shell:
@@ -105,7 +107,7 @@ loop_shell:
     	jal strncmp #compara
     	
     	move $t0, $v0 # resposta, 0 sao iguais
-	beq $t0, $zero, handlerRmvMorador #se for igual a addMorador, vai processar isso
+	beq $t0, $zero, handlerRmvMorador #se for igual a rmvMorador, vai processar isso
 #=======================================
 	la $a0, cmd3 #compara com addAuto
     	la $a1, input_buffer #passa oq foi digitado
@@ -113,7 +115,7 @@ loop_shell:
     	jal strncmp #compara
     	
     	move $t0, $v0 # resposta, 0 sao iguais
-	beq $t0, $zero, handlerAddAuto #se for igual a addMorador, vai processar isso
+	beq $t0, $zero, handlerAddAuto #se for igual a addAuto, vai processar isso
 #=======================================	
 	la $a0, cmd4 #compara com rmvAuto
     	la $a1, input_buffer #passa oq foi digitado
@@ -121,7 +123,7 @@ loop_shell:
     	jal strncmp #compara
     	
     	move $t0, $v0 # resposta, 0 sao iguais
-	beq $t0, $zero, handlerRmvAuto #se for igual a addMorador, vai processar isso
+	beq $t0, $zero, handlerRmvAuto #se for igual a rmvAuto, vai processar isso
 	
 	
 #=======================================	
@@ -131,7 +133,7 @@ loop_shell:
     	jal strncmp #compara
     	
     	move $t0, $v0 # resposta, 0 sao iguais
-	beq $t0, $zero, handlerLmpAp #se for igual a addMorador, vai processar isso
+	beq $t0, $zero, handlerLmpAp #se for igual a limparAp, vai processar isso
 	
 #=======================================	
 	la $a0, cmd7 #compara com infoGeral
@@ -140,7 +142,7 @@ loop_shell:
     	jal strncmp #compara
     	
     	move $t0, $v0 # resposta, 0 sao iguais
-	beq $t0, $zero, handlerInfoGeral #se for igual a addMorador, vai processar isso
+	beq $t0, $zero, handlerInfoGeral #se for igual a infoGeral, vai processar isso
 #=======================================	
 	la $a0, cmd8 #compara com salvar
     	la $a1, input_buffer #passa oq foi digitado
@@ -148,7 +150,7 @@ loop_shell:
     	jal strncmp #compara
     	
     	move $t0, $v0 # resposta, 0 sao iguais
-	beq $t0, $zero, handlerSalvar#se for igual a addMorador, vai processar isso	
+	beq $t0, $zero, handlerSalvar#se for igual a salvar, vai processar isso	
 #=======================================	
 	la $a0, cmd9 #compara com recarregar
     	la $a1, input_buffer #passa oq foi digitado
@@ -156,15 +158,23 @@ loop_shell:
     	jal strncmp #compara
     	
     	move $t0, $v0 # resposta, 0 sao iguais
-	beq $t0, $zero, handlerRecarregar#se for igual a addMorador, vai processar isso	
+	beq $t0, $zero, handlerRecarregar#se for igual a recarregar, vai processar isso	
 #=======================================	
 	la $a0, cmd10 #compara com formatar
     	la $a1, input_buffer #passa oq foi digitado
-    	li $a2, 10 #limite de caracteres
+    	li $a2, 8 #limite de caracteres
     	jal strncmp #compara
     	
     	move $t0, $v0 # resposta, 0 sao iguais
-	beq $t0, $zero, handlerRecarregar#se for igual a addMorador, vai processar isso	
+	beq $t0, $zero, handlerFormatar#se for igual a formatar, vai processar isso	
+#=======================================	
+	la $a0, cmd11 #compara com sair
+    	la $a1, input_buffer #passa oq foi digitado
+    	li $a2, 4 #limite de caracteres
+    	jal strncmp #compara
+    	
+    	move $t0, $v0 # resposta, 0 sao iguais
+	beq $t0, $zero, saida_programa#se for igual a sair, vai processar isso	
 #=======================================
 	print_string(inv_command) #vai printar que foi comando invalido
 	j loop_shell #volta pro loop de comando
@@ -621,7 +631,38 @@ handlerRecarregar:
 	print_string(arquivo_recarregado)
 	j loop_shell
 	
-	
+handlerFormatar:
+	li $t8, 0 # savar 0 para escrever
+	li $t7, 4320 # 180 bytes pra serem limpos do aps
+	la $s2, apartamentos # endereco dos aps a serem formatados
+	formatar_aps:
+    			loop_formatar_aps:
+    				blt $t7, $zero, aps_formatados # terminou de iterar pelo nome e zerou ele todo
+    				sb $t8, apartamentos($t7) # guarda 0 no caractere atual
+    				subi $t7, $t7, 1 # diminui do contador de caracteres a remover
+    				j loop_formatar_aps# continua no ciclo
+		
+				aps_formatados:
+					print_string(ap_formatados)
+					j formatar_veiculo
+
+			formatar_veiculo:
+				li $t7, 1440 # bytes pra serem limpos	
+				la $t6, veiculos
+				loop_formatar_veiculo:
+    					blt $t7, $zero, veiculos_formatados # terminou de iterar pelo nome e zerou ele todo
+    					sb $t8, veiculos($t7) # guarda 0 no caractere atual
+    					#addi $t6, $t6, 1 # passa para o proximo caractere
+    					subi $t7, $t7, 1 # diminui do contador de caracteres a remover
+    					j loop_formatar_veiculo # continua no ciclo
+		
+				veiculos_formatados:
+					print_string(veiculo_formatados)
+					j tudo_formatado
+					
+				tudo_formatado:
+					print_string(formatado)
+					j loop_shell
 	
 
 #comando invalido
@@ -685,3 +726,7 @@ strcmp_iteration:
 strcmp_exit:
 	move $v0, $zero #salva o valor em v0 para retornar
 	jr $ra #volta para onde foi chamado
+	
+saida_programa:
+	li $v0, 10
+	syscall
