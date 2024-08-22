@@ -24,8 +24,11 @@ ap_veiculo_vazio: .asciiz "\nVeiculos do apartamento Removidos\n"
 info_geral_str: .asciiz "\nInformação Geral dos Apartamentos:"
 vazios: .asciiz "\nApartamentos Vazios:     "
 ocupados: .asciiz "\nApartamentos Ocupados:     "
-porcentagem: .asciiz "%)"
+porcentagem: .asciiz "%)\n"
 parenteses: .asciiz "  ("
+arquivo_salvo: .asciiz "\nArquivo salvo\n"
+caminho_aps: .asciiz "C:\\Users\\nichc\\OneDrive\\Documentos\\AOC\\Projeto\\aoc-assembly-project\\apartamentos.txt"
+caminho_veiculos: .asciiz "C:\\Users\\nichc\\OneDrive\\Documentos\\AOC\\Projeto\\aoc-assembly-project\\veiculos.txt"
 
 
 input_buffer: .space 100 #string digitada
@@ -136,7 +139,14 @@ loop_shell:
     	
     	move $t0, $v0 # resposta, 0 sao iguais
 	beq $t0, $zero, handlerInfoGeral #se for igual a addMorador, vai processar isso
-	
+#=======================================	
+	la $a0, cmd8 #compara com infoGeral
+    	la $a1, input_buffer #passa oq foi digitado
+    	li $a2, 6 #limite de caracteres
+    	jal strncmp #compara
+    	
+    	move $t0, $v0 # resposta, 0 sao iguais
+	beq $t0, $zero, handlerSalvar#se for igual a addMorador, vai processar isso	
 #=======================================
 	print_string(inv_command) #vai printar que foi comando invalido
 	j loop_shell #volta pro loop de comando
@@ -463,7 +473,7 @@ handlerLmpAp:
 							j loop_shell
 					
 
-	handlerInfoGeral:
+handlerInfoGeral:
     	li $t9, 24            # Total de apartamentos
     	li $t7, 0             # Contador de índice de apartamentos (0...23)
     	li $t3, 0             # Contador de apartamentos ocupados
@@ -514,7 +524,47 @@ handlerLmpAp:
 
     	j loop_shell
 
-
+handlerSalvar:
+	li $v0, 13 #carrega codigo de abrir um arquivo
+	la $a0, caminho_aps #caminho do arquivo de apartamentos
+	li $a1, 1 # codigo de escrever
+	li $a2, 664 # permissão do arquivo
+	syscall
+	
+	move $s0, $v0
+	
+	li $v0, 15
+	move $a0, $s0
+	la $a1, apartamentos
+	li $a2, 4320
+	syscall
+	
+	li $v0, 16
+	move $a0, $s0
+	syscall
+	
+	li $v0, 13
+	la $a0, caminho_veiculos
+	li $a1, 1
+	li $a2, 664
+	syscall
+	
+	move $s0, $v0
+	
+	li $v0, 15
+	move $a0, $s0
+	la $a1, veiculos
+	li $a2, 1440
+	syscall
+	
+	li $v0, 16
+	move $a0, $s0
+	syscall
+	
+	print_string(arquivo_salvo)
+	j loop_shell
+	
+	
 
 #comando invalido
 invalida:
