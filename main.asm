@@ -29,6 +29,8 @@ parenteses: .asciiz "  ("
 arquivo_salvo: .asciiz "\nArquivo salvo\n"
 caminho_aps: .asciiz "C:\\Users\\nichc\\OneDrive\\Documentos\\AOC\\Projeto\\aoc-assembly-project\\apartamentos.txt"
 caminho_veiculos: .asciiz "C:\\Users\\nichc\\OneDrive\\Documentos\\AOC\\Projeto\\aoc-assembly-project\\veiculos.txt"
+arquivo_recarregado: .asciiz "\nDados recarregados\n"
+
 
 
 input_buffer: .space 100 #string digitada
@@ -140,13 +142,29 @@ loop_shell:
     	move $t0, $v0 # resposta, 0 sao iguais
 	beq $t0, $zero, handlerInfoGeral #se for igual a addMorador, vai processar isso
 #=======================================	
-	la $a0, cmd8 #compara com infoGeral
+	la $a0, cmd8 #compara com salvar
     	la $a1, input_buffer #passa oq foi digitado
     	li $a2, 6 #limite de caracteres
     	jal strncmp #compara
     	
     	move $t0, $v0 # resposta, 0 sao iguais
 	beq $t0, $zero, handlerSalvar#se for igual a addMorador, vai processar isso	
+#=======================================	
+	la $a0, cmd9 #compara com recarregar
+    	la $a1, input_buffer #passa oq foi digitado
+    	li $a2, 10 #limite de caracteres
+    	jal strncmp #compara
+    	
+    	move $t0, $v0 # resposta, 0 sao iguais
+	beq $t0, $zero, handlerRecarregar#se for igual a addMorador, vai processar isso	
+#=======================================	
+	la $a0, cmd10 #compara com formatar
+    	la $a1, input_buffer #passa oq foi digitado
+    	li $a2, 10 #limite de caracteres
+    	jal strncmp #compara
+    	
+    	move $t0, $v0 # resposta, 0 sao iguais
+	beq $t0, $zero, handlerRecarregar#se for igual a addMorador, vai processar isso	
 #=======================================
 	print_string(inv_command) #vai printar que foi comando invalido
 	j loop_shell #volta pro loop de comando
@@ -529,12 +547,12 @@ handlerSalvar:
 	la $a0, caminho_aps #caminho do arquivo de apartamentos
 	li $a1, 1 # codigo de escrever
 	li $a2, 664 # permissão do arquivo
-	syscall
+	syscall #abriu o arquivo
 	
-	move $s0, $v0
+	move $s0, $v0 # salva o descritor que voltou em v0
 	
-	li $v0, 15
-	move $a0, $s0
+	li $v0, 15 # carrega o codigo de escrever no arquivo
+	move $a0, $s0 # 
 	la $a1, apartamentos
 	li $a2, 4320
 	syscall
@@ -563,6 +581,46 @@ handlerSalvar:
 	
 	print_string(arquivo_salvo)
 	j loop_shell
+	
+handlerRecarregar:
+	li $v0, 13 # codigo para abrir o arquivo
+	la $a0, caminho_aps # passa o caminho do arquivo de apartamentos
+	li $a1, 0 #carrega o codigo de modo de leitura
+	syscall
+	
+	move $s0, $v0 # salva o descritor
+	
+	li $v0, 14 # carrega o codigo de ler
+	move $a0, $s0 # passa o descritor
+	la $a1, apartamentos # carrega a string dos aps
+	li $a2, 4320 # tamanho a ser lido
+	syscall
+	
+	li $v0, 16 # carrega o codigo de fechar o arquivo
+	move $a0, $s0 # passa o descritor
+	syscall # fecha o arquivo
+	
+	#veiculos
+	li $v0, 13 # carrega o codigo para abrir o arquivo de veiculos
+	la $a0, caminho_veiculos # passa o caminho do arquivo
+	li $a1, 0 # carrega o codigo de leitura
+	syscall
+	
+	move $s0, $v0 # salva o descritor
+	
+	li $v0, 14 # carrega o codigo de ler
+	move $a0, $s0 # passa o descritor
+	la $a1, veiculos # carrega a string dos veiculos
+	li $a2, 1440 # passa o tamanho a ser lido
+	syscall
+	
+	li $v0, 16 # carrega o codigo de fechar o arquivo
+	move $a0, $s0 # passa o descritor
+	syscall
+	
+	print_string(arquivo_recarregado)
+	j loop_shell
+	
 	
 	
 
