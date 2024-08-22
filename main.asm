@@ -17,6 +17,9 @@ pedir_placa: .asciiz "\nDigite a placa do veículo: "
 pedir_modelo: .asciiz "\nDigite o modelo do veículo: "
 vaga_lotada: .asciiz "\nA vaga está ocupada\n"
 tipo_invalido: .asciiz "\nTipo de veículo inserido é inválido\n"
+veiculo_inexistente: .asciiz "\nVeículo da placa digitada não existe nesse apartamento\n"
+veiculo_retirado: .asciiz "\nVeículo Removido\n"
+
 
 input_buffer: .space 100 #string digitada
 apartamentos: .space 4320 #12 andares * 2ap/a * 6 moradores * tamanho string | 180 para cada ap | 30 para cada morador
@@ -25,7 +28,7 @@ input_nome:   .space 30       # Buffer para a string de saída (primeira palavra
 input_tipo: .space 1
 input_placa: .space 7
 input_modelo: .space 22
-
+zero: .space 1
 
 #comandos disponiveis
 cmd1: .asciiz "addMorador"
@@ -166,36 +169,37 @@ handlerRmvMorador:
     	
 	li $v0, 5 # codigo de ler int
 	syscall # le o ap
-	move $t0, $v0 #salva o ap em t0
+	move $s1, $v0 #salva o ap em t0
 	
 	print_string(pedir_nome) # Pede nome do morador
 	read_string(input_nome, 30) # lê nome do morador
 	
 	la $t1, input_nome #carrega o endereco de onde salvou o nome digitado
 	
-	blt $t0, $zero, invalida # verifica se é valido o numero do ap
-	bgt $t0, $t9, invalida # verifica se é válido o numero do ap
+	blt $s1, $zero, invalida # verifica se é valido o numero do ap
+	bgt $s1, $t9, invalida # verifica se é válido o numero do ap
 	configurar_removedor:
 		#calcular o endereço a verificar
 		li $t2, 180 # carrega 180, quantia por ap
-		mul $t0, $t0, $t2 #multiplica pelo ap em si, ex: ap 12 * 180 = x
+		mul $s1, $s1, $t2 #multiplica pelo ap em si, ex: ap 12 * 180 = x
 			configurar_igualdade:
 				li $t3, 0 #contador de moradores
 				li $t4, 30 #tamanho de um morador do ap
 				verificar_igualdade:
 					
 					la $t7, apartamentos # carrega o endereco base do array de apartamentos
-					add $t7, $t7, $t0 # soma com o endereco do apartamento
+					add $t7, $t7, $s1 # soma com o endereco do apartamento
 					
 					la $a1, input_nome #move o nome salvo para passar para a comparação
 					move $a0, $t7 # move o nome digitado para passar para a comparação
+					li $a2, 30
 					
-					jal strcmp # vai comparar a string
+					jal strncmp # vai comparar a string
 					move $t6, $v0 #salva o resultado, 0 = strings iguais
 					beqz $t6, removerMorador # vai remover o morador
 					addi $t3, $t3, 1 # aumenta o contador de morador/indice
-					add $t0, $t4, $t0 # vai para o endereco do proximo morador
-					bne $t3, 6, verificar_igualdade # repete o ciclo
+					add $s1, $t4, $s1 # vai para o endereco do proximo morador
+					bne $t3, 5, verificar_igualdade # repete o ciclo
 					
 					print_string(morador_inexistente) # printa quando nao tem um morador com o nome digitado nesse apartamento
 					
@@ -207,8 +211,8 @@ handlerRmvMorador:
     					li $t5, 0 # $t5 = valor a ser armazenado (0)
     					loop_remover_morador:
     						beq $t4, $zero, morador_removido # terminou de iterar pelo nome e zerou ele todo
-    						sb $t5, apartamentos($t0) # guarda 0 no caractere atual
-    						addi $t0, $t0, 1 # passa para o proximo caractere
+    						sb $t5, apartamentos($s1) # guarda 0 no caractere atual
+    						addi $s1, $s1, 1 # passa para o proximo caractere
     						subi $t4, $t4, 1 # diminui do contador de caracteres a remover
     						j loop_remover_morador # continua no ciclo
     						
@@ -250,10 +254,23 @@ handlerAddAuto:
 			bne $t4, $t3, input_invalido # sai daqui
 			
 		verifica_vaga:	
-			#verifica se vaga atual esta livre
 			lb $t2, veiculos($t0) # pega o valor que está na posicao inicial dos veiculos desse ap e salva em t2
-			beq $t2, $zero, inserir_auto # verifica se está livre, 0 = livre, M = moto, C = carro
-		
+			addi $t6, $t0, 30 # calcula a segunda vaga
+			lb $t7, veiculos($t6) # pega o valor da segunda vaga
+			
+			#a segunda vaga esta ocupada? se sim, verifica a primeira, senao vai pro resto
+			bne $t7, $zero, verificar_primeira_vaga # verifica se está livre, 0 = livre, M = moto, C = carro		
+				j resto_verifica
+				verificar_primeira_vaga: #verifica a primeira vaga para procurar veiculo
+					beq $t2, $zero, verifica_input_auto
+						j vaga_ocupada
+						verifica_input_auto:
+							beq $t4, $t3, vaga_ocupada
+			resto_verifica:	
+			
+			#se chega aqui, ou as duas vagas estão livres, ou a segunda vaga está ocupada e você quer colocar uma moto na primeira vaga
+			beq $t2, $zero, inserir_auto # se estiver livre, insere
+			
 			#não estando livre, verifica se o cadastrado na vaga atual é um carro
 			li $t3, 'C' # carrega a inicial de carro
 			beq $t2, $t3, vaga_ocupada # compara a posicao inicial, quando nao está livre, se tem um carro, se tiver avisa que está ocupado
@@ -301,9 +318,69 @@ handlerAddAuto:
 			j loop_shell # volta para o loop comando
 			
 handlerRmvAuto:
-	print_string(pedir_ap) # printa a frase de pedir um ap
-	read_int($t0) # recebe o ap e salva em t0
+	li $t9, 23 # coloca em t9 23 que é o numero máximo de aps
 
+	print_string(pedir_ap) # printa a frase de pedir um ap
+	read_int($s0) # recebe o ap e salva em t0
+
+	print_string(pedir_placa) # pede a placa
+	read_string(input_placa, 7) # le a placa
+	
+	blt $s0, $zero, invalida # verifica se é valido o numero do ap
+	bgt $s0, $t9, invalida # verifica se é válido o numero do ap
+	
+	li $t1, 60 # carrega a quantia de espaco para cada apartamento(30 cada veiculo)
+	mul $s0, $s0, $t1 # calcula a posicao inicial dos veiculos desse ap
+	li $t8, 0 # limite de vagas que pode olhar
+	li $t3, 30 # casas para ir pra proxima vaga
+	
+	la $t4, veiculos # carrega o endereco base do array de veiculos
+	add $t4, $t4, $s0 # soma com o endereco do apartamento
+	addi $t4, $t4, 1 # soma para chegar na placa
+	encontrar_veiculo:
+		
+		la $a1, input_placa #move a placa salva para passar para a comparação
+		move $a0, $t4 # move a placa digitada para passar para a comparação
+		li $a2, 7
+						
+		jal strncmp # vai comparar a placa
+		move $t5, $v0 #salva o resultado, 0 = strings iguais
+		
+		beqz $t5, removerVeiculo # vai remover o veiculo se as placas forem iguais
+		
+		addi $t8, $t8, 1 # aumenta o contador de vaga/indice
+		add $s0, $t4, $t3 # vai para o endereco da proxima vaga
+		beq $t8, 2, veiculo_nao_existe # repete o ciclo
+			
+		j encontrar_veiculo
+		
+		veiculo_nao_existe:		
+			print_string(veiculo_inexistente) # printa quando nao tem um morador com o nome digitado nesse apartamento
+			
+		j loop_shell # volta pro loop de comando
+		
+	removerVeiculo:
+	beq $t8, 1, tira_um
+		j resto_remover_veiculo
+		tira_um:
+			subi $s0, $s0, 1
+		resto_remover_veiculo:
+		li $t4, 30 # $t4 = número de bytes a serem limpos
+    		#lb $t5, zero # $t5 = valor a ser armazenado (0)
+    		li $t5, 0
+    		loop_remover_veiculo:
+    			beq $t4, $zero, veiculo_removido # terminou de iterar pelo nome e zerou ele todo
+    			#sb $t5, veiculos($t0) # guarda 0 no caractere atual
+    			
+    			sb $t5, veiculos($s0)
+    			
+    			addi $s0, $s0, 1 # passa para o proximo caractere
+    			subi $t4, $t4, 1 # diminui do contador de caracteres a remover
+    			j loop_remover_veiculo # continua no ciclo
+    						
+		veiculo_removido:
+			print_string(veiculo_retirado) # informa que o veiculo foi retirado
+			j loop_shell # volta para o loop de comando
 
 
 
