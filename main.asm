@@ -463,60 +463,56 @@ handlerLmpAp:
 							j loop_shell
 					
 
-handlerInfoGeral:
-    li $t9, 24
-    li $t7, 0 #contador de indice de apartamentos (0...23)
-    li $t2, 0 #endereco do array/indice
-    li $t3, 0 #aps ocupados
-    li $t6, 180 # tamanho ap
-    loop_info_aps:
-        beq $t7, 24, sair_info
-        lb $t0, apartamentos($t2)
-        bnez $t0, conta_ap
+	handlerInfoGeral:
+    	li $t9, 24            # Total de apartamentos
+    	li $t7, 0             # Contador de índice de apartamentos (0...23)
+    	li $t3, 0             # Contador de apartamentos ocupados
+    	li $t2, 0             # Endereço do array/índice
+    	li $t6, 180           # Tamanho de cada apartamento em bytes
 
-        sub $t6, $t6, 1
-        beqz $t6, conta_ap_vazio
-        addi $t2, $t2, 1
-        j loop_info_aps
+	loop_info_aps:
+    	beq $t7, 24, sair_info  # Se todos os apartamentos foram verificados, sair do loop
+    	lb $t0, apartamentos($t2)  # Carregar o byte que indica ocupação do apartamento
+    	bnez $t0, conta_ap        # Se o apartamento está ocupado, vá para `conta_ap`
 
-        conta_ap_vazio:
-            addi $t7, $t7, 1
-            mul $t2, $t7, 180
-            j loop_info_aps
+    	# Caso o apartamento esteja vazio
+    	addi $t7, $t7, 1          # Incrementar índice de apartamentos
+    	addi $t2, $t2, 180        # Mover para o próximo apartamento
+    	j loop_info_aps           # Continuar o loop
 
-        conta_ap:
-            addi $t3, $t3, 1
-            addi $t7, $t7, 1
-            mul $t2, $t7, 180
-            j loop_info_aps
+	conta_ap:
+    	addi $t3, $t3, 1          # Incrementar contador de apartamentos ocupados
+    	addi $t7, $t7, 1          # Incrementar índice de apartamentos
+    	addi $t2, $t2, 180        # Mover para o próximo apartamento
+    	j loop_info_aps           # Continuar o loop
 
-        sair_info:
-            sub $t8, $t9, $t3 # quantia de aps vazios
+	sair_info:
+    	sub $t8, $t9, $t3         # Calcular quantia de apartamentos vazios
 
-            mul $t2, $t3, 100 # calculo da porcentagem ocupada
-            divu $t9, $t2
+    	# Calcular a porcentagem de apartamentos ocupados
+    	mul $t1, $t3, 100         # Multiplicar número de ocupados por 100
+    	divu $t1, $t1, $t9        # Dividir pelo total de apartamentos
+    	mflo $t1                  # Mover o quociente (porcentagem ocupada) para $t1
 
-            mfhi $t1 # porcentagem aps ocupadas
+    	# Calcular a porcentagem de apartamentos vazios
+    	li $t7, 100
+    	sub $t4, $t7, $t1         # Subtrair porcentagem ocupada de 100 para obter porcentagem vazia
 
-            li $t7, 100
-            sub $t4, $t7, $t1 # porcentagem aps vazias
+    # Imprimir os resultados
+    	print_string(info_geral_str)
+    	print_string(ocupados)
+    	print_int($t3)
+    	print_string(parenteses)
+    	print_int($t1)
+    	print_string(porcentagem)
 
-            print_string(info_geral_str)
-            print_string(ocupados)
-            print_int($t3)
-            print_string(parenteses)
-            print_int($t1)
-            print_string(porcentagem)
+    	print_string(vazios)
+    	print_int($t8)
+    	print_string(parenteses)
+    	print_int($t4)
+    	print_string(porcentagem)
 
-            print_string(vazios)
-            print_int($t8)
-            print_string(parenteses)
-            print_int($t4)
-            print_string(porcentagem)
-
-            j loop_shell	
-			
-
+    	j loop_shell
 
 
 
