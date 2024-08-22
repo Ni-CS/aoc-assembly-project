@@ -477,13 +477,10 @@ handlerLmpAp:
     				addi $s2, $s2, 1 # passa para o proximo caractere
     				subi $t7, $t7, 1 # diminui do contador de caracteres a remover
     				j loop_remover_ap_morador # continua no ciclo
-		
 						moradorees_ap_removido:
 							print_string(ap_morador_vazio)
 							j remove_ap_veiculo
-
-
-	remove_ap_veiculo:
+			remove_ap_veiculo:
 	
 				li $t7, 60 # 60 bytes pra serem limpos
 				mul $t6, $t6, $t7 #multiplica pelo ap em si, ex: ap 12 * 60 = x
@@ -562,31 +559,32 @@ handlerSalvar:
 	move $s0, $v0 # salva o descritor que voltou em v0
 	
 	li $v0, 15 # carrega o codigo de escrever no arquivo
-	move $a0, $s0 # 
-	la $a1, apartamentos
-	li $a2, 4320
+	move $a0, $s0 # passa o descritor
+	la $a1, apartamentos # carrega o endereco do array de aps
+	li $a2, 4320 # passa o tamanho do array
 	syscall
 	
-	li $v0, 16
-	move $a0, $s0
+	li $v0, 16 # carrega o codigo de fechar o arquivo
+	move $a0, $s0 # passa o descritor
 	syscall
 	
-	li $v0, 13
-	la $a0, caminho_veiculos
-	li $a1, 1
-	li $a2, 664
+	#veiculos
+	li $v0, 13 # carrega o codigo de abrir o arquivo
+	la $a0, caminho_veiculos # passa o caminho do veiculo
+	li $a1, 1 # carrega o codigo de escrever
+	li $a2, 664 # passa a permissao
 	syscall
 	
-	move $s0, $v0
+	move $s0, $v0 # salva o descritor
 	
-	li $v0, 15
-	move $a0, $s0
-	la $a1, veiculos
-	li $a2, 1440
+	li $v0, 15 # carrega o codigo de escrever no arquivo
+	move $a0, $s0 # passa o descritor
+	la $a1, veiculos #carrega o endereco do array de veiculos
+	li $a2, 1440 # tamanho do array de veiculos
 	syscall
 	
-	li $v0, 16
-	move $a0, $s0
+	li $v0, 16 # carrega o codigo de fechar o arquivo
+	move $a0, $s0 #passa o descritor
 	syscall
 	
 	print_string(arquivo_salvo)
